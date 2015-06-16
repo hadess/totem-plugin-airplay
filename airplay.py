@@ -44,7 +44,7 @@ class AirPlay (GObject.Object, Peas.Activatable):
 		self.totem.service.__del__()
 
 class AirPlayTotemPlayer(AirPlayService):
-	def __init__(self, totem, name=None, host="0.0.0.0", port=22555):
+	def __init__(self, totem, name=None, host="0.0.0.0", port=7000):
 		self.location = None
 		self.totem = totem
 		AirPlayService.__init__(self, name, host, port)

@@ -325,7 +325,7 @@ class AsyncoreThread(threading.Thread):
 		self.map=None
 
 class AirPlayService(asyncore.dispatcher):
-	def __init__(self, name=None, host="0.0.0.0", port=22555):
+	def __init__(self, name=None, host="0.0.0.0", port=7000):
 		# create socket server
 		asyncore.dispatcher.__init__(self)
 		self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
