@@ -318,13 +318,13 @@ class AirPlayService(asyncore.dispatcher):
 		self.remote_clients = []
 		macstr = "%012X" % uuid.getnode()
 		self.deviceid = ''.join("%s:" % macstr[i:i+2] for i in range(0, len(macstr), 2))[:-1]
-		self.features = 0x07 # 0x77 on iOS 4.3.1
-		self.model = "AppleTV2,1"
+		self.features = 0x2200019
+		self.model = "FreeboxPlayer1,1"
 
 		# create avahi service
 		if (name is None):
 			name = "Airplay Service on " + platform.node()
-		self.zeroconf_service = ZeroconfService(name, port=port, stype="_airplay._tcp", text=["deviceid="+self.deviceid,"features="+hex(self.features),"model="+self.model])
+		self.zeroconf_service = ZeroconfService(name, port=port, stype="_airplay._tcp", text=["vv=1","flags=0x4","srcvers=160.10","model="+self.model,"features="+hex(self.features),"deviceid="+self.deviceid])
 
 		# publish avahi service
 		self.zeroconf_service.publish()
