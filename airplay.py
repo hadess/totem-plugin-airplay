@@ -50,7 +50,7 @@ class AirPlayTotemPlayer(AirPlayService):
 		AirPlayService.__init__(self, name, host, port)
 
 	def __del__(self):
-		self.totem.action_stop()
+		self.totem.stop()
 		AirPlayService.__del__(self)
 
 	# this returns current media duration and current seek time
@@ -66,7 +66,7 @@ class AirPlayTotemPlayer(AirPlayService):
 	# this must seek to a certain time
 	def set_scrub(self, position):
 		if self.totem.is_seekable():
-			GObject.idle_add(self.totem.action_seek_time, int(float(position) * 1000), False)
+			GObject.idle_add(self.totem.seek_time, int(float(position) * 1000), False)
 
 	# this only sets the location and start position, it does not yet start to play
 	def play(self, location, position):
@@ -75,7 +75,7 @@ class AirPlayTotemPlayer(AirPlayService):
 
 	# stop the playback completely
 	def stop(self, info):
-		GObject.idle_add(self.totem.action_stop)
+		GObject.idle_add(self.totem.stop)
 
 	# reverse HTTP to PTTH
 	def reverse(self, info):
@@ -87,7 +87,7 @@ class AirPlayTotemPlayer(AirPlayService):
 			if self.location is not None:
 				timeout = 5
 				# start playback and loading of media
-				GObject.idle_add(self.totem.add_to_playlist_and_play, self.location[0], "AirPlay Video", False)
+				GObject.idle_add(self.totem.add_to_playlist, self.location[0], "AirPlay Video", True)
 				# wait until stream-length is loaded and is not zero
 				duration = 0
 				while (int(duration) == 0 and timeout > 0):
@@ -102,10 +102,10 @@ class AirPlayTotemPlayer(AirPlayService):
 					self.set_scrub(targetoffset)
 
 			if (not self.totem.is_playing()):
-				GObject.idle_add(self.totem.action_play)
+				GObject.idle_add(self.totem.play)
 
 			del self.location
 			self.location = None
 		else:
-			GObject.idle_add(self.totem.action_play_pause)
+			GObject.idle_add(self.totem.play_pause)
 
