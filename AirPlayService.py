@@ -29,7 +29,7 @@ import time
 import uuid
 import re
 from datetime import datetime, date
-from urlparse import urlparse
+from urllib.parse import urlparse
 from biplist import readPlistFromString
 from ZeroconfService import ZeroconfService
 
@@ -37,13 +37,13 @@ __all__ = ["BaseAirPlayRequest", "AirPlayService", "AirPlayProtocolHandler"]
 
 class BaseAirPlayRequest(object):
 	def read_from_socket(self, socket):
-		data = socket.recv(1024)
+		data = bytes(socket.recv(1024))
 		if not data:
 			return False
 
 		# we split the message into HTTP headers and content body
-		message = data.split("\r\n\r\n", 1)
-		headers = message[0]
+		message = data.split(b"\r\n\r\n", 1)
+		headers = message[0].decode()
 		headerlines = headers.splitlines()
 
 		# parse request headers
@@ -52,7 +52,7 @@ class BaseAirPlayRequest(object):
 		self.uri = command[1]
 		self.version = command[2]
 		del headerlines[0]
-		self.headers = self.parse_headers(headerlines)
+		self.headers = self.parse_headers('\n'.join(headerlines))
 
 		# parse any uri query parameters
 		self.params = None
@@ -75,24 +75,26 @@ class BaseAirPlayRequest(object):
 
 		return True
 
-	def parse_headers(self, lines):
+	def parse_headers(self, data):
 		headers = {}
-		plist = []
-		for line in lines:
-			match = re.search(r'bplist|\x00', line)
-			if match:
-				plist.append(line)
-			else:
+
+		match = None
+		try:
+			match = data.startswith(b'bplist\x00')
+		except:
+			pass
+
+		if match or isinstance(data, bytes):
+			values = readPlistFromString(data)
+			for key in values:
+				headers[key] = values[key]
+		else:
+			lines = data.splitlines()
+			for line in lines:
 				if line:
 					name, value = line.split(": ", 1)
 					headers[name.strip()] = value.strip()
-		if len(plist):
-			try:
-				values = readPlistFromString('\r'.join(plist))
-				for key in values:
-					headers[key] = values[key]
-			except (Exception), e:
-				print "Not a plist:", e
+
 		return headers
 
 class AirPlayProtocolHandler(asyncore.dispatcher_with_send):
@@ -160,7 +162,7 @@ class AirPlayProtocolHandler(asyncore.dispatcher_with_send):
 			content = content % (float(d), float(p), int(self.service.is_playing()), playbackBufferEmpty, readyToPlay, float(d), float(d))
 			answer = self.create_request(200, "Content-Type: text/x-apple-plist+xml", content)
 		elif (request.uri.find('/play')>-1):
-			parsedbody = request.parse_headers(request.body.splitlines())
+			parsedbody = request.parse_headers(request.body)
 			self.service.play(parsedbody['Content-Location'], float(parsedbody['Start-Position']))
 			answer = self.create_request()
 		elif (request.uri.find('/stop')>-1):
@@ -209,11 +211,11 @@ class AirPlayProtocolHandler(asyncore.dispatcher_with_send):
 		elif (request.uri.find("/setProperty")>-1):
 			anert = self.create_request()
 		else:
-			print >> sys.stderr, "ERROR: AirPlay - Unable to handle request \"%s\"" % (request.uri)
+			print ("ERROR: AirPlay - Unable to handle request \"%s\"" % (request.uri), file=sys.stderr)
 			answer = self.create_request(404)
 
 		if(answer is not ""):
-			self.send(answer)
+			self.send(bytes(answer.encode()))
 
 	def get_datetime(self):
 		today = datetime.now()
@@ -221,7 +223,7 @@ class AirPlayProtocolHandler(asyncore.dispatcher_with_send):
 		return datestr+" GMT"
 
 	def create_request(self, status = 200, header = "", body = ""):
-		clength = len(bytes(body))
+		clength = len(bytes(body.encode()))
 		if (status == 200):
 			answer = "HTTP/1.1 200 OK"
 		elif (status == 404):
@@ -334,7 +336,7 @@ class AirPlayService(asyncore.dispatcher):
 		self.thread.is_finished = False
 		self.thread.start()
 
-		print "AirPlayService running"
+		print ("AirPlayService running")
 
 	def handle_accept(self):
 		pair = self.accept()
