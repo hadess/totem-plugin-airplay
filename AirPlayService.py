@@ -210,6 +210,19 @@ class AirPlayProtocolHandler(asyncore.dispatcher_with_send):
 			answer = self.create_request(200, "Content-Type: text/x-apple-plist+xml", content)
 		elif (request.uri.find("/setProperty")>-1):
 			anert = self.create_request()
+		elif (request.uri.find("/getProperty")>-1):
+			content = '<?xml version="1.0" encoding="UTF-8"?>\
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\
+<plist version="1.0">\
+<dict>\
+<key>errorCode</key>\
+<integer>0</integer>\
+</dict>\
+</plist>'
+			answer = self.create_request(200, "Content-Type: text/x-apple-plist+xml", content)
+		elif (request.uri.find("/fp-setup")>-1):
+			# As done in https://github.com/xbmc/xbmc/blob/master/xbmc/network/AirPlayServer.cpp
+			answer = self.create_request(412)
 		else:
 			print ("ERROR: AirPlay - Unable to handle request \"%s\"" % (request.uri), file=sys.stderr)
 			answer = self.create_request(404)
@@ -228,6 +241,8 @@ class AirPlayProtocolHandler(asyncore.dispatcher_with_send):
 			answer = "HTTP/1.1 200 OK"
 		elif (status == 404):
 			answer = "HTTP/1.1 404 Not Found"
+		elif (status == 412):
+			answer = "HTTP/1.1 412 Precondition Failed"
 		elif (status == 101):
 			answer = "HTTP/1.1 101 Switching Protocols"
 			answer += "\nUpgrade: PTTH/1.0"
