@@ -38,7 +38,20 @@ class AirPlay (GObject.Object, Peas.Activatable):
 
 	def do_activate (self):
 		self.totem = self.object
-		self.totem.service = AirPlayTotemPlayer(totem=self.totem,name="Totem on %s" % (platform.node()))
+		content = None
+		name = None
+		try:
+			with open('/etc/machine-info', 'r') as content_file:
+				content = content_file.read()
+		except:
+			pass
+		if content:
+			for line in content.splitlines():
+				if line.startswith('PRETTY_HOSTNAME='):
+					name = line[len('PRETTY_HOSTNAME='):]
+		if not name:
+			name = "Totem on %s" % platform.node()
+		self.totem.service = AirPlayTotemPlayer(totem=self.totem,name=name)
 
 	def do_deactivate (self):
 		self.totem.service.__del__()
