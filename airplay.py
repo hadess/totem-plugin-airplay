@@ -72,6 +72,9 @@ class AirPlayTotemPlayer(AirPlayService):
 	def play(self, location, position):
 		# start position is in percent
 		self.location	= [location, position]
+		# loading media
+		self.totem.clear_playlist()
+		GObject.idle_add(self.totem.add_to_playlist, self.location[0], "AirPlay Video", False)
 
 	# stop the playback completely
 	def stop(self, info):
@@ -86,8 +89,6 @@ class AirPlayTotemPlayer(AirPlayService):
 		if (int(float(speed)) >= 1):
 			if self.location is not None:
 				timeout = 5
-				# start playback and loading of media
-				GObject.idle_add(self.totem.add_to_playlist, self.location[0], "AirPlay Video", True)
 				# wait until stream-length is loaded and is not zero
 				duration = 0
 				while (int(duration) == 0 and timeout > 0):
